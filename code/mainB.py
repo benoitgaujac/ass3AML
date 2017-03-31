@@ -23,31 +23,32 @@ import ATARIagent
 # Experience set up
 df = 0.99 # discount factor
 #learning_rate = 0.001 # learning rate
-nsteps = 300000 # number of training steps
+nsteps = 10000000 # number of training steps
 n_test_episode = 3 # number of testing episodes
-test_frequency = 20000 # test frequency of greedy policy
+test_frequency = 50000 # test frequency of greedy policy
 update_frequency = 5000 # frequency of update for target_net
+store_loss_frequency = 1000 # frequency of store loss
 startE = 0.5 # starting exploration probability
 endE = 0.05 # ending exploration probability
 stepDrop = (startE - endE)/nsteps # decay step size of the exploration policy
 batch_size = 256 # batch size for experience replay buffer
-exp_replay_buffer_size = 200000 # size of the experience replay buffer
+exp_replay_buffer_size = 300000 # size of the experience replay buffer
 n_runs = 1 # number of runs for average performances
-log_frequency = 40000 # frequency of login
+log_frequency = 100000 # frequency of login
 # Environment setting
 frame_width = 28
 frame_height = 28
 frame_chan = 4
 shape = (-1,frame_width,frame_height,frame_chan)
 
-lr_list = [0.00005,0.0001,0.0005]
-
+#lr_list = [0.00005,0.0001,0.0005]
+lr_list = [0.00005,]
 
 pong = {"name":"Pong-v3","dim_action_space": 6,}
 pacman = {"name":"MsPacman-v3","dim_action_space": 9}
 boxe = {"name":"Boxing-v3","dim_action_space": 18}
-#models = [pong, pacman, boxe]
-models = [pong, ]
+models = [pong, pacman, boxe]
+#models = [pong, ]
 
 """
 env = gym.make(pacman["name"])
@@ -90,7 +91,7 @@ def save_csv(to_save,columns_list,dst_path,idx_frq=1):
         os.remove(dst_path)
     if len(to_save)!=len(columns_list):
         raise Exception("Error in formating files to save")
-    episodes_idx = np.arange(0,n_episodes,idx_frq)
+    episodes_idx = np.arange(0,nsteps,idx_frq)
     file_tosave = pd.DataFrame(episodes_idx, columns=["steps"])
     for i in range(1,len(to_save)+1):
         file_tosave.insert(i,columns_list[i-1] , np.array(to_save[i-1]))
@@ -244,7 +245,7 @@ def online_Qlearning(model,learning_rate,save_model=False):
                     l, _ = sess.run([Qagent.l,Qagent.updateModel],feed_dict={Qagent.state: states_batch,
                                                                             Qagent.targetQ: targetQ_batch.astype('float32'),
                                                                             Qagent.actions: actions_batch})
-            if (step)%1000==0:
+            if (step)%store_loss_frequency==0:
                 training_loss.append(l)
             if done:
                 frame = env.reset()
@@ -336,7 +337,7 @@ if __name__ == '__main__':
             name_file = model["name"][:-3] + "_losses_" + str(lr) + ".csv"
             file_path = os.path.join(sub_perf_path,name_file)
             columns = ["loss" + str(i) for i in range(n_runs)]
-            save_csv(runs_loss,columns,file_path)
+            save_csv(runs_loss,columns,file_path,store_loss_frequency)
             # Compute stats for len and returns and save csv
             name_file = model["name"][:-3] + "_perf_" + str(lr) + "..csv"
             file_path = os.path.join(sub_perf_path,name_file)
