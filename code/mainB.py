@@ -31,7 +31,7 @@ endE = 0.05 # ending exploration probability
 stepDrop = (startE - endE)/nsteps # decay step size of the exploration policy
 batch_size = 256 # batch size for experience replay buffer
 exp_replay_buffer_size = 100000 # size of the experience replay buffer
-n_runs = 1 # number of runs for average performances
+n_runs = 2 # number of runs for average performances
 log_frequency = 10000 # frequency of login
 # Environment setting
 frame_width = 28
@@ -215,7 +215,7 @@ def online_Qlearning(model,learning_rate,save_model=False):
                 #terminal_state = np.array(done).reshape((-1))
                 experience = (state,a,next_state,r,done)
                 exp_replay.add(experience)
-                if len(exp_replay.replay)>=(1024):
+                if len(exp_replay.replay)>=(2048):
                     minibatch = exp_replay.sample(batch_size)
                     states_batch = np.stack([minibatch[i][0] for i in range(len(minibatch))], axis=0).astype('float32')
                     actions_batch = np.stack([minibatch[i][1] for i in range(len(minibatch))], axis=0).reshape((-1))
