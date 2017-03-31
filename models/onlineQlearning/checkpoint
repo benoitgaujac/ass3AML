@@ -1,0 +1,2 @@
+model_checkpoint_path: "doubleQ.ckpt"
+all_model_checkpoint_paths: "doubleQ.ckpt"
