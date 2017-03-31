@@ -22,25 +22,25 @@ import ATARIagent
 
 # Experience set up
 df = 0.99 # discount factor
-learning_rate = 0.001 # learning rate
-nsteps = 500000 # number of training steps
+#learning_rate = 0.001 # learning rate
+nsteps = 300000 # number of training steps
 n_test_episode = 3 # number of testing episodes
-test_frequency = 10000 # test frequency of greedy policy
+test_frequency = 20000 # test frequency of greedy policy
 update_frequency = 5000 # frequency of update for target_net
 startE = 0.5 # starting exploration probability
 endE = 0.05 # ending exploration probability
 stepDrop = (startE - endE)/nsteps # decay step size of the exploration policy
 batch_size = 256 # batch size for experience replay buffer
-exp_replay_buffer_size = 100000 # size of the experience replay buffer
-n_runs = 2 # number of runs for average performances
-log_frequency = 10000 # frequency of login
+exp_replay_buffer_size = 200000 # size of the experience replay buffer
+n_runs = 1 # number of runs for average performances
+log_frequency = 40000 # frequency of login
 # Environment setting
 frame_width = 28
 frame_height = 28
 frame_chan = 4
 shape = (-1,frame_width,frame_height,frame_chan)
 
-lr_list = [0.00001,0.001,0.1]
+lr_list = [0.00005,0.0001,0.0005]
 
 
 pong = {"name":"Pong-v3","dim_action_space": 6,}
@@ -49,6 +49,19 @@ boxe = {"name":"Boxing-v3","dim_action_space": 18}
 #models = [pong, pacman, boxe]
 models = [pong, ]
 
+"""
+env = gym.make(pacman["name"])
+for i_episode in range(2):
+    # Initialize environment
+    observation = env.reset()
+    done = False
+    # episode loop
+    while not done:
+        env.render()
+        action = env.action_space.sample()
+        observation, r, done, _ = env.step(action)
+    pdb.set_trace()
+"""
 
 MODEL_DIR = "../models"
 if not tf.gfile.Exists(MODEL_DIR):
@@ -251,10 +264,10 @@ def online_Qlearning(model,learning_rate,save_model=False):
 
             # Testing greedy policy every test_frequency
             if (step)%test_frequency==0:
-                test_episodes_return = []
+                test_episodes_return, test_episodes_scores = [], []
                 for ie in range(n_test_episode):
                     obs = env.reset()
-                    s, return_ = 0, 0.0
+                    s, return_, scores = 0, 0.0, 0.0
                     histo_obs = []
                     test_done = False
                     while not test_done:
@@ -275,17 +288,19 @@ def online_Qlearning(model,learning_rate,save_model=False):
                             rgreedy = f_reward(rewardgreedy)
                             # Compute return
                             return_ += (df**s)*rgreedy
-                            #return_ += rgreedy
+                            scores += rgreedy
                             # Update histo
                             histo_obs.append(process_frame(obs))
                             histo_obs[0:1] = []
                     test_episodes_return.append(return_)
+                    test_episodes_scores.append(scores)
                 # Compute stat on performances
                 mean_test_return = np.mean(np.array(test_episodes_return),axis=0)
+                mean_test_scores = np.mean(np.array(test_episodes_scores),axis=0)
                 episodes_return.append(mean_test_return)
                 if (step)%log_frequency==0:
                     print(" Testing greedy after {} steps:".format(step+1))
-                    print(" Mean return:  {:.3f}".format(mean_test_return))
+                    print(" Mean return: {:.3f}\tMean scores: {:.1f}".format(mean_test_return,mean_test_scores))
 
         if save_model:
             sub_model_path = os.path.join(MODEL_DIR,SUB_DIR)
