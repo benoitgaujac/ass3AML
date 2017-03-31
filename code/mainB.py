@@ -11,6 +11,7 @@ import pandas as pd
 import tensorflow as tf
 from skimage.color import rgb2gray
 from skimage.transform import resize
+import warnings
 
 import gym
 import ATARIagent
@@ -66,8 +67,10 @@ def update_target_net(variables,sess):
         sess.run(var)
 
 def process_frame(frame):
-    resized = resize(frame, (frame_width,frame_height),preserve_range=True)
-    return rgb2gray(resized).astype("uint8")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        resized = resize(frame, (frame_width,frame_height),preserve_range=True)
+        return rgb2gray(resized).astype("uint8")
 
 def save_csv(to_save,columns_list,dst_path,idx_frq=1):
     if os.path.isfile(dst_path):
