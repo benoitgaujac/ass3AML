@@ -3,8 +3,8 @@ from __future__ import division
 import random
 import tensorflow as tf
 
-frame_width = 28
-frame_height = 28
+frame_width = 64
+frame_height = 64
 frame_chan = 4
 sfilter_conv0 = 6
 nfilter_conv0 = 16

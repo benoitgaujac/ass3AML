@@ -23,8 +23,8 @@ import ATARIagent
 # Experience set up
 df = 0.99 # discount factor
 #learning_rate = 0.001 # learning rate
-nsteps = 10000000 # number of training steps
-n_test_episode = 3 # number of testing episodes
+nsteps = 1000000 # number of training steps
+n_test_episode = 5 # number of testing episodes
 test_frequency = 50000 # test frequency of greedy policy
 update_frequency = 5000 # frequency of update for target_net
 store_loss_frequency = 1000 # frequency of store loss
@@ -36,13 +36,13 @@ exp_replay_buffer_size = 300000 # size of the experience replay buffer
 n_runs = 1 # number of runs for average performances
 log_frequency = 100000 # frequency of login
 # Environment setting
-frame_width = 28
-frame_height = 28
+frame_width = 64
+frame_height = 64
 frame_chan = 4
 shape = (-1,frame_width,frame_height,frame_chan)
 
 #lr_list = [0.00005,0.0001,0.0005]
-lr_list = [0.00005,]
+lr_list = [0.00008,]
 
 pong = {"name":"Pong-v3","dim_action_space": 6,}
 pacman = {"name":"MsPacman-v3","dim_action_space": 9}

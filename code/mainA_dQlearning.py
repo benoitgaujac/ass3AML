@@ -26,7 +26,7 @@ decay = 2000 # decay for the exploration probability
 stepDrop = (startE - endE)/decay # decay step size of the exploration policy
 batch_size = 128 # batch size for experience replay buffer
 exp_replay_buffer_size = 1024 # size of the experience replay buffer
-n_runs = 10 # number of runs for average performances
+n_runs = 50 # number of runs for average performances
 log_frequency = 1000 # frequencyof login
 
 double_Q = {"name":"doubleQ","nunits": 100,"lr":0.001,"exp_replay_buffer":True}
