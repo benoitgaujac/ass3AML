@@ -28,7 +28,7 @@ decay = 2000 # decay for the exploration probability
 stepDrop = (startE - endE)/decay # decay step size of the exploration policy
 batch_size = 128 # batch size for experience replay buffer
 exp_replay_buffer_size = 1024 # size of the experience replay buffer
-n_runs = 50 # number of runs for average performances 
+n_runs = 20 # number of runs for average performances
 log_frequency = 1000 # frequencyof login
 
 Q_30 = {"name":"Qlearning_30","nunits": 30,"lr":0.001,"exp_replay_buffer":False,"target":False}
@@ -138,12 +138,13 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                             actions_batch = np.stack([minibatch[i][1] for i in range(len(minibatch))], axis=0).reshape((-1))
                             next_state_batch = np.stack([minibatch[i][2] for i in range(len(minibatch))], axis=0).reshape((-1,4))
                             r_batch = np.stack([minibatch[i][3] for i in range(len(minibatch))], axis=0).reshape((-1))
+                            terminal_state_batch = np.stack([minibatch[i][4] for i in range(len(minibatch))], axis=0).reshape((-1))
                             if model["target"]:
                                 Qout = sess.run(Qtarget_net.Qout,feed_dict={Qtarget_net.state: next_state_batch})
                             else:
                                 Qout = sess.run(Qagent.Qout,feed_dict={Qagent.state: next_state_batch})
                             maxQ = np.amax(Qout, axis=1)
-                            targetQ_batch = r_batch + (1+np.transpose(r_batch))*df * maxQ
+                            targetQ_batch = r_batch + (1-np.transpose(terminal_state_batch))*df * maxQ
                             l, _ = sess.run([Qagent.l,Qagent.updateModel],feed_dict={Qagent.state: states_batch,
                                                                                     Qagent.targetQ: targetQ_batch.astype("float32"),
                                                                                     Qagent.actions: actions_batch})
@@ -152,7 +153,7 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                         Qout = sess.run(Qagent.Qout,feed_dict={Qagent.state: next_state.reshape(-1,4)})
                         maxQ = np.amax(Qout, axis=1)
                         # If terminal state, we dont bootstrap, otherwise, we bootstrap
-                        targetQ = r + (1+np.transpose(r))*df * maxQ
+                        targetQ = r + (1-np.transpose(done))*df * maxQ
                         # Train
                         l, _ = sess.run([Qagent.l,Qagent.updateModel],feed_dict={Qagent.state: state.reshape(-1,4),
                                                                                 Qagent.targetQ: np.array([targetQ]).reshape(-1),

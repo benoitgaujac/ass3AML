@@ -126,18 +126,19 @@ def online_Qlearning(model,fct_approximator="hidden",save_model=False):
                     actions_batch = np.stack([minibatch[i][1] for i in range(len(minibatch))], axis=0).reshape((-1))
                     next_state_batch = np.stack([minibatch[i][2] for i in range(len(minibatch))], axis=0).reshape((-1,4))
                     r_batch = np.stack([minibatch[i][3] for i in range(len(minibatch))], axis=0).reshape((-1))
+                    terminal_state_batch = np.stack([minibatch[i][4] for i in range(len(minibatch))], axis=0).reshape((-1))
                     # Update randomly QagentA or QagentB
                     if np.random.rand(1)<0.5:
                         a_ = sess.run(QagentA.predict,feed_dict={QagentA.state: next_state_batch})
                         QoutB = sess.run(QagentB.Qout,feed_dict={QagentB.state: next_state_batch})
-                        targetQ_batch = r_batch + (1+np.transpose(r_batch))*df * QoutB[np.arange(np.shape(QoutB)[0]),a_]
+                        targetQ_batch = r_batch + (1-np.transpose(terminal_state_batch))*df * QoutB[np.arange(np.shape(QoutB)[0]),a_]
                         l,_ = sess.run([QagentA.l,QagentA.updateModel],feed_dict={QagentA.state: states_batch,
                                                                                 QagentA.targetQ: targetQ_batch.astype("float32"),
                                                                                 QagentA.actions: actions_batch})
                     else:
                         a_ = sess.run(QagentB.predict,feed_dict={QagentB.state: next_state_batch})
                         QoutA = sess.run(QagentA.Qout,feed_dict={QagentA.state: next_state_batch})
-                        targetQ_batch = r_batch + (1+np.transpose(r_batch))*df * QoutA[np.arange(np.shape(QoutA)[0]),a_]
+                        targetQ_batch = r_batch + (1-np.transpose(terminal_state_batch))*df * QoutA[np.arange(np.shape(QoutA)[0]),a_]
                         l,_ = sess.run([QagentB.l,QagentB.updateModel],feed_dict={QagentB.state: states_batch,
                                                                                 QagentB.targetQ: targetQ_batch.astype("float32"),
                                                                                 QagentB.actions: actions_batch})

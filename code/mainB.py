@@ -17,6 +17,7 @@ import gym
 import ATARIagent
 
 #env = gym.make('Pong-v3')
+#print(env.action_space)
 #env = gym.make('MsPacman-v3')
 #env = gym.make('Boxing-v3')
 
@@ -24,31 +25,31 @@ import ATARIagent
 df = 0.99 # discount factor
 #learning_rate = 0.001 # learning rate
 nsteps = 1000000 # number of training steps
-n_test_episode = 5 # number of testing episodes
-test_frequency = 50000 # test frequency of greedy policy
+n_test_episode = 3 # number of testing episodes
+test_frequency = 40000 #50000 # test frequency of greedy policy
 update_frequency = 5000 # frequency of update for target_net
 store_loss_frequency = 1000 # frequency of store loss
 startE = 0.5 # starting exploration probability
 endE = 0.05 # ending exploration probability
 stepDrop = (startE - endE)/nsteps # decay step size of the exploration policy
-batch_size = 256 # batch size for experience replay buffer
-exp_replay_buffer_size = 300000 # size of the experience replay buffer
+batch_size = 64 # batch size for experience replay buffer
+exp_replay_buffer_size = 500000 # size of the experience replay buffer
 n_runs = 1 # number of runs for average performances
-log_frequency = 100000 # frequency of login
+log_frequency = 4000 # frequency of login
 # Environment setting
-frame_width = 64
-frame_height = 64
+frame_width = 84
+frame_height = 84
 frame_chan = 4
 shape = (-1,frame_width,frame_height,frame_chan)
 
 #lr_list = [0.00005,0.0001,0.0005]
-lr_list = [0.00008,]
+lr_list = [0.0001,]
 
 pong = {"name":"Pong-v3","dim_action_space": 6,}
 pacman = {"name":"MsPacman-v3","dim_action_space": 9}
 boxe = {"name":"Boxing-v3","dim_action_space": 18}
-models = [pong, pacman, boxe]
-#models = [pong, ]
+#models = [pong, pacman, boxe]
+models = [pong, ]
 
 """
 env = gym.make(pacman["name"])
@@ -169,6 +170,7 @@ def collect_rnd_episodes_from_Qnet(environment,nb_episodes):
 ######################################## Main online Qlearning ########################################
 def online_Qlearning(model,learning_rate,save_model=False):
     env = gym.make(model["name"])
+    test_env = gym.make(model["name"])
     # Reset tf graph
     tf.reset_default_graph()
     # Build agent
@@ -200,10 +202,12 @@ def online_Qlearning(model,learning_rate,save_model=False):
         # keep histo last 4 frames
         histo_frames = []
         # Initialize indicators
-        training_loss, episodes_return = [], []
+        training_loss, episodes_return, episodes_score = [], [], []
         l = 0.0
         # Training with e-greedy policy
         for step in range(nsteps):
+            #if(step)%5000==0:
+            #    print("Step {}...".format(step))
             # Training
             if len(histo_frames)<frame_chan:
                 # add fram to histo
@@ -232,7 +236,7 @@ def online_Qlearning(model,learning_rate,save_model=False):
                 #terminal_state = np.array(done).reshape((-1))
                 experience = (state,a,next_state,r,done)
                 exp_replay.add(experience)
-                if len(exp_replay.replay)>=(2048):
+                if len(exp_replay.replay)>=65: #(1024):
                     minibatch = exp_replay.sample(batch_size)
                     states_batch = np.stack([minibatch[i][0] for i in range(len(minibatch))], axis=0).astype('float32')
                     actions_batch = np.stack([minibatch[i][1] for i in range(len(minibatch))], axis=0).reshape((-1))
@@ -259,15 +263,15 @@ def online_Qlearning(model,learning_rate,save_model=False):
             if (step)%log_frequency==0:
                 print("")
                 print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-                print("Steps {} to {} done, took {:2f}s".format(max(0,step+1-log_frequency),step,time.time()-start_time))
+                print("Steps {} to {} done, took {:.2f}s".format(max(0,step+1-log_frequency),step,time.time()-start_time))
                 print(" Train loss: {:.4f}".format(l))
                 start_time = time.time()
 
             # Testing greedy policy every test_frequency
             if (step)%test_frequency==0:
-                test_episodes_return, test_episodes_scores = [], []
+                test_episodes_return, test_episodes_score = [], []
                 for ie in range(n_test_episode):
-                    obs = env.reset()
+                    obs = test_env.reset()
                     s, return_, scores = 0, 0.0, 0.0
                     histo_obs = []
                     test_done = False
@@ -277,14 +281,14 @@ def online_Qlearning(model,learning_rate,save_model=False):
                             # add frame to histo
                             histo_obs.append(process_frame(obs))
                             # sample random action
-                            rand_action = env.action_space.sample()
+                            rand_action = test_env.action_space.sample()
                             # env step from random action
                             obs, _, test_done, _ = env.step(rand_action)
                         else:
                             # Take greedy action
                             agreedy = sess.run(Qagent.predict,feed_dict={Qagent.state: np.stack(histo_obs,axis=-1).reshape(shape).astype('float32')})
                             # Env step from greedy
-                            obs, rewardgreedy, test_done, _  = env.step(agreedy[0])
+                            obs, rewardgreedy, test_done, _  = test_env.step(agreedy[0])
                             # Clip reward
                             rgreedy = f_reward(rewardgreedy)
                             # Compute return
@@ -294,14 +298,15 @@ def online_Qlearning(model,learning_rate,save_model=False):
                             histo_obs.append(process_frame(obs))
                             histo_obs[0:1] = []
                     test_episodes_return.append(return_)
-                    test_episodes_scores.append(scores)
+                    test_episodes_score.append(scores)
                 # Compute stat on performances
                 mean_test_return = np.mean(np.array(test_episodes_return),axis=0)
-                mean_test_scores = np.mean(np.array(test_episodes_scores),axis=0)
+                mean_test_score = np.mean(np.array(test_episodes_score),axis=0)
                 episodes_return.append(mean_test_return)
+                episodes_score.append(mean_test_score)
                 if (step)%log_frequency==0:
                     print(" Testing greedy after {} steps:".format(step+1))
-                    print(" Mean return: {:.3f}\tMean scores: {:.1f}".format(mean_test_return,mean_test_scores))
+                    print(" Mean return: {:.3f}\tMean scores: {:.1f}".format(mean_test_return,mean_test_score))
 
         if save_model:
             sub_model_path = os.path.join(MODEL_DIR,SUB_DIR)
@@ -313,7 +318,7 @@ def online_Qlearning(model,learning_rate,save_model=False):
             print("Model saved")
 
     sess.close()
-    return training_loss, episodes_return
+    return training_loss, episodes_return, episodes_score
 
 
 if __name__ == '__main__':
@@ -322,24 +327,28 @@ if __name__ == '__main__':
         os.makedirs(sub_perf_path)
     for lr in lr_list:
         for model in models:
-            runs_loss, runs_len, runs_return = [], [], []
+            #runs_loss, runs_return, runs_score = [], [], []
+            runs_loss = []
             for run in range(n_runs):
                 print("Starting run {}/{} model {}...".format(run+1,n_runs,model["name"]))
                 str_time = time.time()
-                episodes_loss, episodes_return = online_Qlearning(model,lr,run==0)
+                #episodes_loss, episodes_return, episodes_score = online_Qlearning(model,lr,run==0)
+                episodes_loss, runs_return, runs_score = online_Qlearning(model,lr,run==0)
                 # losses
                 runs_loss.append(episodes_loss)
                 # returns
-                runs_return.append(episodes_return)
+                #runs_return.append(episodes_return)
+                # scores
+                #runs_score.append(episodes_score)
                 print("\nRun {}/{} model {}, done, tooks {:.2f}s".format(run+1,n_runs,model["name"],time.time()-str_time))
 
             # Save loss and perf
             name_file = model["name"][:-3] + "_losses_" + str(lr) + ".csv"
             file_path = os.path.join(sub_perf_path,name_file)
-            columns = ["loss" + str(i) for i in range(n_runs)]
+            columns = ["losses"]
             save_csv(runs_loss,columns,file_path,store_loss_frequency)
             # Compute stats for len and returns and save csv
             name_file = model["name"][:-3] + "_perf_" + str(lr) + "..csv"
             file_path = os.path.join(sub_perf_path,name_file)
-            columns = ["return" + str(i) for i in range(n_runs)]
-            save_csv(runs_return,columns,file_path,test_frequency)
+            columns = ["return","score"]
+            save_csv([runs_return,runs_score],columns,file_path,test_frequency)

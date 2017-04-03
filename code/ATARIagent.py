@@ -3,14 +3,16 @@ from __future__ import division
 import random
 import tensorflow as tf
 
-frame_width = 64
-frame_height = 64
+frame_width = 84
+frame_height = 84
 frame_chan = 4
 sfilter_conv0 = 6
 nfilter_conv0 = 16
 sfilter_conv1 = 4
 nfilter_conv1 = 32
-nunits_fc = 256
+#nunits_fc = 256
+nunits_fc = 512
+
 
 class Q_agent():
     def __init__(self,dim_act,learning_rate,prefixe_name=""):
@@ -33,6 +35,9 @@ class Q_agent():
                                         initializer = tf.constant_initializer(0.1))
         conv0 = tf.nn.conv2d(self.state, self.weights0, strides=[1, 2, 2, 1], padding='SAME')
         conv0_relu = tf.nn.relu(conv0 + self.bias0)
+        #conv0_relu = tf.nn.max_pool(tf.nn.relu(conv0 + self.bias0), ksize=[1, 2, 2, 1],
+        #                                strides=[1, 2, 2, 1],
+        #                                padding='SAME')
         # Conv layer 1
         self.weights1 = tf.get_variable(prefixe_name+"weights1",
                                         [sfilter_conv1,sfilter_conv1,nfilter_conv0,nfilter_conv1],
@@ -42,6 +47,9 @@ class Q_agent():
                                         initializer = tf.constant_initializer(0.1))
         conv1 = tf.nn.conv2d(conv0_relu, self.weights1, strides=[1, 2, 2, 1], padding='SAME')
         conv1_relu = tf.nn.relu(conv1 + self.bias1)
+        #conv1_relu = tf.nn.max_pool(tf.nn.relu(conv1 + self.bias1), ksize=[1, 2, 2, 1],
+        #                                strides=[1, 2, 2, 1],
+        #                                padding='SAME')
         # Flatten conv1
         conv1_output_shpe = conv1_relu.get_shape().as_list()
         conv1_flat_dim = conv1_output_shpe[1]*conv1_output_shpe[2]*conv1_output_shpe[3]
@@ -73,8 +81,8 @@ class Q_agent():
         td_error = tf.square(self.targetQ - self.Q) / 2
         loss = tf.reduce_mean(td_error)
         self.l = loss
-        trainer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
-        #trainer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+        #trainer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        trainer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.updateModel = trainer.minimize(loss)
 
 class experience_replay():

@@ -92,7 +92,7 @@ def collect_rnd_episodes(nb_episodes):
         # Initialize history
         t = 0
         done = False
-        observations,rewards,actions = [], [], []
+        observations,rewards,actions,terminal_state = [], [], [], []
         # episode loop
         while t<max_len_episode and not done:
             action = env.action_space.sample()
@@ -102,11 +102,12 @@ def collect_rnd_episodes(nb_episodes):
             reward = f_reward(done)
             # Update obs, reward and action
             rewards.append(reward)
+            terminal_state.append(done)
             t+=1
         if (i_episode+1)%500==0:
             print("Episode {} generated".format(i_episode+1))
         # Update episodes
-        episodes.append([actions,observations,rewards])
+        episodes.append([actions,observations,rewards,terminal_state])
     return episodes
 
 def f_reward(end_of_episode):
@@ -134,6 +135,7 @@ def Batch_Qlearning(mode,episodes_histo,learning_rate,fct_approximator="linear",
     action_history = np.concatenate([episodes_histo[i][0] for i in range(len(episodes_histo))], axis=0)
     state_history  = np.concatenate([episodes_histo[i][1] for i in range(len(episodes_histo))], axis=0)
     reward_history = np.concatenate([episodes_histo[i][2] for i in range(len(episodes_histo))], axis=0)
+    terminal_state_history = np.concatenate([episodes_histo[i][3] for i in range(len(episodes_histo))], axis=0)
     total_steps = len(state_history)
     # Reset tf graph
     tf.reset_default_graph()
@@ -156,11 +158,12 @@ def Batch_Qlearning(mode,episodes_histo,learning_rate,fct_approximator="linear",
                     states = state_history[ibatch*batch_size:(ibatch+1)*batch_size]
                     next_states = state_history[ibatch*batch_size+1:(ibatch+1)*batch_size+1]
                     rewards = reward_history[ibatch*batch_size:(ibatch+1)*batch_size]
+                    terminal_state = terminal_state_history[ibatch*batch_size:(ibatch+1)*batch_size]
                     # Get predictions from agent
                     Qout = sess.run(batchQ_agent.Qout,feed_dict={batchQ_agent.state: next_states})
                     maxQ = np.amax(Qout, axis=1)
                     # Build target
-                    targetQ = rewards + (1+np.transpose(rewards))*df * maxQ
+                    targetQ = rewards + (1-np.transpose(terminal_state))*df * maxQ
                     # training
                     l, _ = sess.run([batchQ_agent.l,batchQ_agent.updateModel], feed_dict={batchQ_agent.state: states,
                                                                                         batchQ_agent.actions: actions,
