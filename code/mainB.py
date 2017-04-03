@@ -48,8 +48,8 @@ lr_list = [0.0001,]
 pong = {"name":"Pong-v3","dim_action_space": 6,}
 pacman = {"name":"MsPacman-v3","dim_action_space": 9}
 boxe = {"name":"Boxing-v3","dim_action_space": 18}
-#models = [pong, pacman, boxe]
-models = [pong, ]
+models = [pong, pacman, boxe]
+#models = [pong, ]
 
 """
 env = gym.make(pacman["name"])
