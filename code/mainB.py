@@ -35,7 +35,7 @@ stepDrop = (startE - endE)/nsteps # decay step size of the exploration policy
 batch_size = 64 # batch size for experience replay buffer
 exp_replay_buffer_size = 500000 # size of the experience replay buffer
 n_runs = 1 # number of runs for average performances
-log_frequency = 4000 # frequency of login
+log_frequency = 40000 # frequency of login
 # Environment setting
 frame_width = 84
 frame_height = 84
