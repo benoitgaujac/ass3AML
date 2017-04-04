@@ -15,15 +15,16 @@ import gym
 import RLagent
 
 env = gym.make('CartPole-v0')
+test_env = gym.make('CartPole-v0')
 
 max_len_episode = 300
 df = 0.99 # discount factor
 batch_size = 256
 nepochs = 201
 log_frequency = 100
-test_freq = 3
+test_freq = 4
 n_test_episode = 20
-n_runs = 5
+n_runs = 4
 MODEL_DIR = "../models"
 if not tf.gfile.Exists(MODEL_DIR):
     os.makedirs(MODEL_DIR)
@@ -119,7 +120,6 @@ def f_reward(end_of_episode):
 def save_csv(to_save,columns_list,dst_path,idx_frq=1):
     if os.path.isfile(dst_path):
         os.remove(dst_path)
-    pdb.set_trace()
     if len(to_save)!=len(columns_list):
         raise Exception("Error in formating files to save")
     epoch_idx = np.arange(0,nepochs,idx_frq)
@@ -180,7 +180,7 @@ def Batch_Qlearning(mode,episodes_histo,learning_rate,fct_approximator="linear",
                 if (epoch)%test_freq==0:
                     episodes_len, episodes_return = [], []
                     for iepisode in range(n_test_episode):
-                        state = env.reset()
+                        state = test_env.reset()
                         t, return_ = 0, 0
                         done = False
                         while t<max_len_episode and not done:
@@ -190,7 +190,7 @@ def Batch_Qlearning(mode,episodes_histo,learning_rate,fct_approximator="linear",
                                 env.render()
                             """
                             a = sess.run(batchQ_agent.predict,feed_dict={batchQ_agent.state: state.reshape(-1,4)})
-                            state, _, done,_  = env.step(a[0])
+                            state, _, done,_  = test_env.step(a[0])
                             r = f_reward(done)
                             return_ += (df**t)*r
                             t+=1
@@ -271,7 +271,14 @@ if __name__ == '__main__':
         # options
         appro = options.approx
         lr = options.lr
+        """
+        lr_list = [0.00001,0.0001,0.001,0.01,0.1,0.5]
+        appro_list = ["hidden","linear"]
+
         # initialize perfo and lost for runs
+        for appro in appro_list:
+            for lr in lr_list:
+        """
         runs_loss, runs_mean_l, runs_mean_r = [], [], []
         for run in range(n_runs):
             print("\nStarting run {}/{}, {} {:.5f} ...".format(run+1,n_runs,appro,lr))
