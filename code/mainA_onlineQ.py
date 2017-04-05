@@ -27,8 +27,8 @@ endE = 0.01 # ending exploration probability
 decay = 2000 # decay for the exploration probability
 stepDrop = (startE - endE)/decay # decay step size of the exploration policy
 batch_size = 128 # batch size for experience replay buffer
-exp_replay_buffer_size = 1024 # size of the experience replay buffer
-n_runs = 20 # number of runs for average performances
+exp_replay_buffer_size = 131072 # size of the experience replay buffer
+n_runs = 100 # number of runs for average performances
 log_frequency = 1000 # frequencyof login
 
 Q_30 = {"name":"Qlearning_30","nunits": 30,"lr":0.001,"exp_replay_buffer":False,"target":False}
@@ -105,6 +105,7 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
         start_time = time.time()
         episodes_loss, episodes_len, episodes_return = [], [], []
         totals_steps = 0
+        # Training with e-greedy policy
         if mode=="train":
             eps = startE
             # Training with e-greedy policy
@@ -114,7 +115,6 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                 done = False
                 while t<max_len_episode and not done:
                     t+=1
-                    #a = sess.run(Qagent.predict,feed_dict={Qagent.state: state.reshape(-1,4)})
                     # choose action with e-greedy
                     if np.random.rand(1) < eps:
                         a = env.action_space.sample()
@@ -124,7 +124,6 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                     # Take action and observe next state and reward
                     next_state, _, done,_  = env.step(a[0])
                     r = f_reward(done)
-                    #next_state, r, done,_  = env.step(a[0])
                     if model["exp_replay_buffer"]:
                         # Add experience to replay buffer
                         state = np.reshape(state,(-1,4)).astype("float32")
@@ -132,7 +131,7 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                         a = np.reshape(a,(-1))
                         experience = (state,a,next_state,r,done)
                         exp_replay.add(experience)
-                        if len(exp_replay.replay)>=(exp_replay_buffer_size):
+                        if len(exp_replay.replay)>=(1024):
                             minibatch = exp_replay.sample(batch_size)
                             states_batch = np.stack([minibatch[i][0] for i in range(len(minibatch))], axis=0).reshape((-1,4))
                             actions_batch = np.stack([minibatch[i][1] for i in range(len(minibatch))], axis=0).reshape((-1))
@@ -175,7 +174,6 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                     print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                     print("Episodes {} to {} done, took {:2f}s".format(max(0,iepisode+1-log_frequency),iepisode,time.time()-start_time))
                     print(" Train loss: {:.4f}\tTotal steps: {:d} ".format(loss,totals_steps))
-                    #print(" Episode len: {:d}\tEpisode return: {:.2f} ".format(t,(df**(t))*r))
                     start_time = time.time()
 
                 # Testing greedy policy every test_frequency
@@ -195,7 +193,6 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                             a = sess.run(Qagent.predict,feed_dict={Qagent.state: obs.reshape(-1,4).astype("float32")})
                             obs, _, test_done,_  = env.step(a[0])
                             test_r = f_reward(test_done)
-                            #obs, test_r, test_done,_  = env.step(a[0])
                         test_episodes_len.append(tstep)
                         test_episodes_return.append((df**(tstep))*test_r)
                     mean_test_len = np.mean(np.array(test_episodes_len),axis=0)
@@ -214,7 +211,7 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                 model_path = os.path.join(sub_model_path,model_name)
                 saver.save(sess,model_path)
                 print("Model saved")
-
+        # Testing with greedy policy
         elif mode=="test":
             sub_model_path = os.path.join(MODEL_DIR,SUB_DIR)
             model_name = model["name"] + ".ckpt"
@@ -230,11 +227,6 @@ def online_Qlearning(model,mode,fct_approximator="hidden",save_model=False):
                 test_done = False
                 while tstep<max_len_episode and not test_done:
                     tstep+=1
-                    """
-                    # Environment render
-                    if epoch==(nepochs-1):
-                        env.render()
-                    """
                     a = sess.run(Qagent.predict,feed_dict={Qagent.state: obs.reshape(-1,4)})
                     obs, _, test_done,_  = env.step(a[0])
                     test_r = f_reward(test_done)
