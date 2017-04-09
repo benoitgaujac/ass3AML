@@ -12,6 +12,7 @@ import pandas as pd
 import tensorflow as tf
 from skimage.color import rgb2gray
 from skimage.transform import resize
+from skimage.io import imshow_collection, imsave
 import warnings
 
 import gym
@@ -21,7 +22,7 @@ import ATARIagent
 df = 0.99 # discount factor
 learning_rate = 0.0001 # learning rate
 nsteps = 1000001 # number of training steps
-n_test_episode = 100 # number of testing episodes
+n_test_episode = 2 # number of testing episodes
 test_frequency = 40000 #50000 # test frequency of greedy policy
 update_frequency = 5000 # frequency of update for target_net
 store_loss_frequency = 1000 # frequency of store loss
@@ -149,6 +150,11 @@ def collect_rnd_episodes_from_Qnet(game,nb_episodes):
                     action = np.array(action).reshape((-1))
                 else:
                     state = np.stack(histo_frames,axis=-1)
+                    #imshow_collection(histo_frames)
+                    for i in range(len(histo_frames)):
+                        name = game["name"] + "_test" + str(i)  +".jpeg"
+                        imsave(name, histo_frames[i])
+                    pdb.set_trace()
                     action = sess.run(Qagent.predict,feed_dict={Qagent.state: state.reshape(shape).astype('float32')})
                     observation, r, done, _ = env.step(action[0])
                     reward = f_reward(r)

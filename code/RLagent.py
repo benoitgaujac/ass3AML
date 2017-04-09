@@ -22,13 +22,13 @@ class Q_agent():
     def Build_Qnet(self,prefixe_name=""):
         if self.approximator=="linear":
             self.weights0 = tf.get_variable("weights0", [dim_state, dim_act], initializer = tf.random_normal_initializer(stddev=0.01))
-            self.bias0 = tf.get_variable("bias0", [dim_act], initializer = tf.constant_initializer(0.1))
+            self.bias0 = tf.get_variable("bias0", [dim_act], initializer = tf.constant_initializer())
             self.Qout = tf.matmul(self.state, self.weights0) + self.bias0
         elif self.approximator=="hidden":
             self.weights0 = tf.get_variable(prefixe_name+"weights0", [dim_state, self.nunits], initializer = tf.random_normal_initializer(stddev=0.01))
-            self.bias0 = tf.get_variable(prefixe_name+"bias0", [self.nunits], initializer = tf.constant_initializer(0.1))
+            self.bias0 = tf.get_variable(prefixe_name+"bias0", [self.nunits], initializer = tf.constant_initializer(0.01))
             self.weights1 = tf.get_variable(prefixe_name+"weights1", [self.nunits, dim_act], initializer = tf.random_normal_initializer(stddev=0.01))
-            self.bias1 = tf.get_variable(prefixe_name+"bias1", [dim_act], initializer = tf.constant_initializer(0.1))
+            self.bias1 = tf.get_variable(prefixe_name+"bias1", [dim_act], initializer = tf.constant_initializer(0.01))
             self.Qout = tf.matmul(tf.nn.relu(tf.matmul(self.state, self.weights0) + self.bias0),self.weights1) + self.bias1
 
     def training_agent(self):
