@@ -53,7 +53,7 @@ plot(xaxis,perfs_00001(:,2),'-','color',col5,'LineWidth',.8)
 hold on;
 plot(xaxis,perfs_000001(:,2),'-','color',col6,'LineWidth',.8) 
 hold off;
-saveas(f1,'plots/loss_linear.jpg')
+saveas(f1,'plots/len_linear.jpg')
 
 f2 = figure
 plot(xaxis,perfs_05(:,4),'-','color',col1,'LineWidth',.8) 
@@ -73,7 +73,7 @@ plot(xaxis,perfs_00001(:,4),'-','color',col5,'LineWidth',.8)
 hold on;
 plot(xaxis,perfs_000001(:,4),'-','color',col6,'LineWidth',.8) 
 hold off;
-saveas(f2,'plots/len_linear.jpg')
+saveas(f2,'plots/return_linear.jpg')
 
 f3 = figure
 plot(xaxisloss,losses_05(:,2),'-','color',col1,'LineWidth',.8) 
@@ -93,7 +93,7 @@ plot(xaxisloss,losses_00001(:,2),'-','color',col5,'LineWidth',.8)
 hold on;
 plot(xaxisloss,losses_000001(:,2),'-','color',col6,'LineWidth',.8) 
 hold off;
-saveas(f3,'plots/returns_linear.jpg')
+saveas(f3,'plots/loss_linear.jpg')
 
 f4 = figure
 plot(perfs_05(:,1),perfs_05(:,2),'-',perfs_05(:,1),perfs_05(:,2)+perfs_05(:,3),':',...
